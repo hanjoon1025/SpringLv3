@@ -33,9 +33,11 @@ public class BoardService {
             throw new IllegalArgumentException("로그인이 필요합니다.");
         }
 
-        Board board = new Board(requestDto);
+        Board board = new Board(requestDto, member);
+
         return new BoardResponseDto(boardRepository.save(board));
     }
+
 
     //게시글 목록 조회
     @Transactional(readOnly = true)
@@ -55,12 +57,16 @@ public class BoardService {
 
     //게시글 수정
     @Transactional
-    public  BoardResponseDto update(Long id, BoardRequestDto requestDto, HttpServletRequest request) {
+    public BoardResponseDto update(Long id, BoardRequestDto requestDto, HttpServletRequest request) {
         Member member = checkJwtToken(request);
 
-        Board board =boardRepository.findById(id).orElseThrow(
+        Board board = boardRepository.findById(id).orElseThrow(
                 () -> new IllegalArgumentException("게시글이 존재하지 않습니다.")
         );
+
+        if (!board.getMember().getId().equals(member.getId())) {
+            throw new IllegalArgumentException("게시글 작성자만 수정할 수 있습니다.");
+        }
 
         board.update(requestDto);
         return new BoardResponseDto(board);
